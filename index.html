@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         * {
@@ -17,6 +17,10 @@
         body {
             background: #FFFFFF;
             overflow-x: hidden;
+        }
+
+        .terminal-font {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
         }
 
         /* Animated Background Blobs */
@@ -118,6 +122,23 @@
             }
         }
 
+        /* Terminal Card - Dark Theme */
+        .terminal-card {
+            backdrop-filter: blur(25px) saturate(200%);
+            background: rgba(20, 20, 20, 0.85);
+            border: 1.5px solid rgba(60, 60, 60, 0.6);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(80,80,80,0.3);
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+            transition: transform 0.3s ease;
+        }
+
+        .terminal-card:hover {
+            transform: translateY(-4px) scale(1.01);
+        }
+
         /* Staggered Entrance */
         .entrance-item {
             opacity: 0;
@@ -147,9 +168,15 @@
         .pulse-dot {
             width: 10px;
             height: 10px;
-            background: #00FF00;
+            background: #FF0000;
             border-radius: 50%;
             animation: pulse 2s ease infinite;
+            box-shadow: 0 0 10px #FF0000;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .pulse-dot.connected {
+            background: #00FF00;
             box-shadow: 0 0 10px #00FF00;
         }
 
@@ -224,12 +251,13 @@
 
         .hero-card { grid-column: span 12; min-height: 400px; }
         .tech-card { grid-column: span 7; min-height: 320px; }
-        .perf-card { grid-column: span 5; min-height: 320px; }
+        .terminal-live { grid-column: span 5; min-height: 320px; }
         .manifesto-card { grid-column: span 8; min-height: 350px; }
         .creator-card { grid-column: span 4; min-height: 350px; }
+        .stats-card { grid-column: span 12; min-height: 200px; }
 
         @media (max-width: 768px) {
-            .hero-card, .tech-card, .perf-card, .manifesto-card, .creator-card {
+            .hero-card, .tech-card, .terminal-live, .manifesto-card, .creator-card, .stats-card {
                 grid-column: span 12;
             }
         }
@@ -247,6 +275,71 @@
             line-height: 1;
             color: #000000;
             letter-spacing: -0.03em;
+        }
+
+        /* Terminal Styles */
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #FF5F57; }
+        .terminal-dot.yellow { background: #FFBD2E; }
+        .terminal-dot.green { background: #28C840; }
+
+        .terminal-output {
+            height: 220px;
+            overflow-y: auto;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #00FF00;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,255,0,0.3) transparent;
+        }
+
+        .terminal-output::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .terminal-output::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .terminal-output::-webkit-scrollbar-thumb {
+            background: rgba(0,255,0,0.3);
+            border-radius: 3px;
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+            opacity: 0;
+            animation: terminalFadeIn 0.3s ease forwards;
+        }
+
+        @keyframes terminalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .terminal-timestamp {
+            color: #888;
+            margin-right: 8px;
         }
 
         .hidden { display: none; }
@@ -275,18 +368,18 @@
         <div class="glass-card hero-card entrance-item">
             <div class="card-content" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
-                    <div class="pulse-dot"></div>
-                    <span style="font-size: 13px; font-weight: 600; color: #666;" class="lang-en">Live Connection</span>
-                    <span style="font-size: 13px; font-weight: 600; color: #666; display: none;" class="lang-ru">Активное Подключение</span>
+                    <div class="pulse-dot" id="statusDot"></div>
+                    <span style="font-size: 13px; font-weight: 600; color: #666;" class="lang-en" id="statusText">Connecting...</span>
+                    <span style="font-size: 13px; font-weight: 600; color: #666; display: none;" class="lang-ru" id="statusTextRu">Подключение...</span>
                 </div>
                 <h1 style="font-size: 96px; font-weight: 900; color: #000000; line-height: 0.9; margin-bottom: 20px; letter-spacing: -0.04em;">Gemmi</h1>
                 <p style="font-size: 28px; font-weight: 600; color: #333; margin-bottom: 12px;" class="lang-en">The Unstoppable Engine</p>
                 <p style="font-size: 28px; font-weight: 600; color: #333; margin-bottom: 12px; display: none;" class="lang-ru">Неудержимый Двигатель</p>
                 <p style="font-size: 16px; color: #666; max-width: 600px; line-height: 1.6;" class="lang-en">
-                    World-class AI power, tamed at home. An elite rotation system that never stops.
+                    Elite Discord bot powered by Google Gemini API rotation. Never stops, never surrenders.
                 </p>
                 <p style="font-size: 16px; color: #666; max-width: 600px; line-height: 1.6; display: none;" class="lang-ru">
-                    Мировой уровень AI, укрощённый дома. Элитная система ротации, которая никогда не останавливается.
+                    Элитный Discord бот на базе ротации Google Gemini API. Никогда не останавливается, никогда не сдается.
                 </p>
             </div>
         </div>
@@ -296,37 +389,89 @@
             <div class="card-content">
                 <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
                     <i data-lucide="rotate-cw" style="width: 28px; height: 28px; color: #000;"></i>
-                    <h2 style="font-size: 32px; font-weight: 900; color: #000000; margin: 0;" class="lang-en">The Rotation</h2>
-                    <h2 style="font-size: 32px; font-weight: 900; color: #000000; margin: 0; display: none;" class="lang-ru">Ротация</h2>
+                    <h2 style="font-size: 32px; font-weight: 900; color: #000000; margin: 0;" class="lang-en">The Rotation System</h2>
+                    <h2 style="font-size: 32px; font-weight: 900; color: #000000; margin: 0; display: none;" class="lang-ru">Система Ротации</h2>
                 </div>
                 <p style="font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 20px;" class="lang-en">
-                    Gemmi operates on an intelligent API rotation system powered by Google AI Studio keys. The infinite engine cycles through multiple endpoints to ensure uninterrupted service.
+                    Gemmi cycles through 7 Google AI Studio API keys, intelligently switching between Gemini models to bypass rate limits. When one key exhausts, the engine rotates to the next—ensuring zero downtime.
                 </p>
                 <p style="font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 20px; display: none;" class="lang-ru">
-                    Gemmi работает на интеллектуальной системе ротации API через ключи Google AI Studio. Бесконечный двигатель циклически переключается между множеством эндпоинтов для непрерывного сервиса.
+                    Gemmi циклически переключается между 7 API ключами Google AI Studio, интеллектуально выбирая модели Gemini для обхода лимитов. Когда один ключ исчерпан, двигатель переходит к следующему—обеспечивая нулевое время простоя.
                 </p>
                 <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemini 3 Flash</div>
-                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemini 2.5 Pro</div>
-                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemma 3 27b</div>
-                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemma 3 12b</div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemini 2.0 Flash</div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemini 1.5 Pro</div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemma 2 27b</div>
+                    <div style="background: rgba(0,0,0,0.05); padding: 10px 18px; border-radius: 50px; font-size: 13px; font-weight: 600; color: #000;">Gemma 2 9b</div>
                 </div>
             </div>
         </div>
 
-        <!-- Performance Card -->
-        <div class="glass-card perf-card entrance-item">
-            <div class="card-content" style="display: flex; flex-direction: column; justify-content: center;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
-                    <i data-lucide="zap" style="width: 28px; height: 28px; color: #000;"></i>
-                    <h2 style="font-size: 28px; font-weight: 900; color: #000000; margin: 0;" class="lang-en">Performance</h2>
-                    <h2 style="font-size: 28px; font-weight: 900; color: #000000; margin: 0; display: none;" class="lang-ru">Производительность</h2>
+        <!-- Live Terminal Card -->
+        <div class="terminal-card terminal-live entrance-item">
+            <div class="card-content terminal-font">
+                <div class="terminal-header">
+                    <div class="terminal-dot red"></div>
+                    <div class="terminal-dot yellow"></div>
+                    <div class="terminal-dot green"></div>
+                    <span style="color: #888; font-size: 13px; margin-left: 12px;" class="lang-en">System Logs</span>
+                    <span style="color: #888; font-size: 13px; margin-left: 12px; display: none;" class="lang-ru">Системные Логи</span>
                 </div>
-                <div class="stat-number" style="margin-bottom: 8px;">1500</div>
-                <p style="font-size: 15px; color: #666; margin-bottom: 28px;" class="lang-en">Requests/Day per Key</p>
-                <p style="font-size: 15px; color: #666; margin-bottom: 28px; display: none;" class="lang-ru">Запросов/День на Ключ</p>
-                <p style="font-size: 14px; color: #333; font-weight: 600;" class="lang-en">Sub-second latency. Enterprise-grade reliability.</p>
-                <p style="font-size: 14px; color: #333; font-weight: 600; display: none;" class="lang-ru">Задержка менее секунды. Надёжность корпоративного уровня.</p>
+                <div class="terminal-output" id="terminalOutput">
+                    <div class="terminal-line">
+                        <span class="terminal-timestamp">[INIT]</span>
+                        <span class="lang-en">Waiting for connection...</span>
+                        <span class="lang-ru" style="display: none;">ожидания подключения...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="glass-card stats-card entrance-item">
+            <div class="card-content">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <i data-lucide="key" style="width: 24px; height: 24px; color: #000;"></i>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0;" class="lang-en">API Keys</h3>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0; display: none;" class="lang-ru">API Ключи</h3>
+                        </div>
+                        <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">7</div>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px;" class="lang-en">Active in rotation</p>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px; display: none;" class="lang-ru">Активны в ротации</p>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <i data-lucide="zap" style="width: 24px; height: 24px; color: #000;"></i>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0;" class="lang-en">Max Tokens</h3>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0; display: none;" class="lang-ru">Макс. Токены</h3>
+                        </div>
+                        <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">1200</div>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px;" class="lang-en">Per response</p>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px; display: none;" class="lang-ru">На ответ</p>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <i data-lucide="clock" style="width: 24px; height: 24px; color: #000;"></i>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0;" class="lang-en">History Cleanup</h3>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0; display: none;" class="lang-ru">Очистка Истории</h3>
+                        </div>
+                        <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">12h</div>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px;" class="lang-en">Automatic reset</p>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px; display: none;" class="lang-ru">Автоматический сброс</p>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                            <i data-lucide="shield" style="width: 24px; height: 24px; color: #000;"></i>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0;" class="lang-en">Spam Protection</h3>
+                            <h3 style="font-size: 18px; font-weight: 900; color: #000; margin: 0; display: none;" class="lang-ru">Защита от Спама</h3>
+                        </div>
+                        <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">6</div>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px;" class="lang-en">Max requests/user</p>
+                        <p style="font-size: 13px; color: #666; margin-top: 4px; display: none;" class="lang-ru">Макс. запросов/юзер</p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -339,16 +484,16 @@
                     <h2 style="font-size: 32px; font-weight: 900; color: #000000; margin: 0; display: none;" class="lang-ru">Манифест</h2>
                 </div>
                 <p style="font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 16px;" class="lang-en">
-                    <strong>Home-grown power vs million-dollar giants.</strong> Gemmi is proof that world-class AI can be tamed at home. Built on resilience, powered by beta-testing keys, and designed to never surrender.
+                    <strong>Homegrown power vs. corporate giants.</strong> Gemmi proves that world-class AI can be tamed at home. Built on Discord.py + FastAPI, powered by Google AI Studio beta keys, and designed to never surrender. The bot features dual personality: toxic and sarcastic to regular users, loyal assistant to its creator.
                 </p>
                 <p style="font-size: 16px; color: #333; line-height: 1.7; margin-bottom: 16px; display: none;" class="lang-ru">
-                    <strong>Домашняя мощь против гигантов.</strong> Gemmi — это доказательство того, что AI мирового класса можно укротить дома. Построен на стойкости, работает на бета-ключах, создан чтобы никогда не сдаваться.
+                    <strong>Домашняя мощь против корпоративных гигантов.</strong> Gemmi доказывает, что AI мирового класса можно укротить дома. Построен на Discord.py + FastAPI, работает на бета-ключах Google AI Studio, создан чтобы никогда не сдаваться. Бот имеет двойную личность: токсичен и саркастичен с обычными пользователями, лоялен к создателю.
                 </p>
                 <p style="font-size: 14px; color: #666; font-style: italic;" class="lang-en">
-                    The infinite engine rotates through keys with surgical precision, ensuring maximum uptime without compromise.
+                    The infinite rotation engine switches models and keys with surgical precision, maximizing uptime without compromise. Real-time WebSocket monitoring keeps you connected to every heartbeat.
                 </p>
                 <p style="font-size: 14px; color: #666; font-style: italic; display: none;" class="lang-ru">
-                    Бесконечный двигатель ротации ключей с хирургической точностью обеспечивает максимальное время работы без компромиссов.
+                    Бесконечный двигатель ротации переключает модели и ключи с хирургической точностью, максимизируя время работы без компромиссов. Мониторинг WebSocket в реальном времени держит вас на связи с каждым биением.
                 </p>
             </div>
         </div>
@@ -363,10 +508,10 @@
                 </div>
                 <div style="font-size: 48px; font-weight: 900; color: #000000; margin-bottom: 12px; letter-spacing: -0.02em;">neyt</div>
                 <p style="font-size: 14px; color: #666; margin-bottom: 32px; flex-grow: 1;" class="lang-en">
-                    To add Gemmi to your server, DM the creator.
+                    To add Gemmi to your Discord server, contact the creator directly.
                 </p>
                 <p style="font-size: 14px; color: #666; margin-bottom: 32px; flex-grow: 1; display: none;" class="lang-ru">
-                    Чтобы добавить Gemmi на ваш сервер, напишите создателю.
+                    Чтобы добавить Gemmi на ваш Discord сервер, свяжитесь с создателем напрямую.
                 </p>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     <button class="apple-btn" onclick="window.open('https://t.me/neyt_tm', '_blank')">
@@ -385,13 +530,14 @@
 
     <!-- Footer -->
     <footer style="position: relative; z-index: 10; padding: 60px 40px; text-align: center; color: #999; font-size: 13px;">
-        <p class="lang-en">© 2026 Gemmi. A private laboratory experiment.</p>
-        <p class="lang-ru" style="display: none;">© 2026 Gemmi. Эксперимент частной лаборатории.</p>
+        <p class="lang-en">© 2026 Gemmi. A private laboratory experiment by neyt.</p>
+        <p class="lang-ru" style="display: none;">© 2026 Gemmi. Эксперимент частной лаборатории от neyt.</p>
     </footer>
 
     <script>
         lucide.createIcons();
 
+        // Language Switch
         function switchLang(lang) {
             const enBtns = document.querySelectorAll('.lang-btn');
             const enElements = document.querySelectorAll('.lang-en');
@@ -409,6 +555,98 @@
                 ruElements.forEach(el => el.style.display = '');
             }
         }
+
+        // WebSocket Connection
+        const WS_URL = 'wss://clifford-interposable-palingenetically.ngrok-free.dev/ws';
+        const MAX_LOGS = 20;
+        let logs = [];
+        let socket = null;
+        let reconnectTimeout = null;
+
+        function getTimestamp() {
+            const now = new Date();
+            return now.toTimeString().split(' ')[0];
+        }
+
+        function addLog(message, isSystem = false) {
+            const timestamp = getTimestamp();
+            logs.push({ timestamp, message, isSystem });
+            
+            // Keep only last MAX_LOGS messages
+            if (logs.length > MAX_LOGS) {
+                logs.shift();
+            }
+            
+            updateTerminal();
+        }
+
+        function updateTerminal() {
+            const output = document.getElementById('terminalOutput');
+            const currentLang = document.querySelector('.lang-btn.active').textContent;
+            
+            output.innerHTML = logs.map(log => `
+                <div class="terminal-line">
+                    <span class="terminal-timestamp">[${log.timestamp}]</span>
+                    <span>${log.message}</span>
+                </div>
+            `).join('');
+            
+            // Auto-scroll to bottom
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateStatus(connected) {
+            const dot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const statusTextRu = document.getElementById('statusTextRu');
+            
+            if (connected) {
+                dot.classList.add('connected');
+                statusText.textContent = 'Live Connection';
+                statusTextRu.textContent = 'подключение активное';
+            } else {
+                dot.classList.remove('connected');
+                statusText.textContent = 'Disconnected';
+                statusTextRu.textContent = 'подключения нет';
+            }
+        }
+
+        function connectWebSocket() {
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+
+            socket = new WebSocket(WS_URL);
+            
+            socket.onopen = () => {
+                console.log('[SYSTEM] WebSocket connected');
+                updateStatus(true);
+                addLog(' Connected to Gemmi system', true);
+            };
+
+            socket.onmessage = (event) => {
+                const message = event.data;
+                console.log('[LOG]', message);
+                addLog(message, false);
+            };
+
+            socket.onclose = () => {
+                console.log('[SYSTEM] WebSocket disconnected');
+                updateStatus(false);
+                addLog('✗ Connection lost. Reconnecting...', true);
+                
+                // Attempt reconnection after 3 seconds
+                reconnectTimeout = setTimeout(connectWebSocket, 3000);
+            };
+
+            socket.onerror = (error) => {
+                console.error('[ERROR] WebSocket error:', error);
+                addLog(' Connection error occurred', true);
+            };
+        }
+
+        // Initialize
+        connectWebSocket();
     </script>
 </body>
 </html>
